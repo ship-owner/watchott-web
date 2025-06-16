@@ -21,22 +21,37 @@ async function request(url, method = 'GET', body = null) {
 
   const token = localStorage.getItem('accessToken');
 
-  if (!isPublicApi(url) && token) {
+  if (!isPublicApi(url)) {
+
+    if (!token) {
+        setTimeout(() => {
+            window.location.href = '/login';
+        }, 1500);
+        throw new Error('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
+    } else {
       options.headers['Authorization'] = `Bearer ${token}`;
+    }
   }
 
   try {
     const response = await fetch(url, options);
 
+    const newAccessToken = response.headers.get('New-Authorization');
+    if (newAccessToken && newAccessToken.startsWith("Bearer ")) {
+      localStorage.setItem('accessToken', newAccessToken.substring(7));
+    }
+
     if (response.status === 401) {
         localStorage.removeItem('accessToken'); 
-        throw new Error('Unauthorized');
+        setTimeout(() => {
+            window.location.href = '/login';
+        }, 1500);
+        throw new Error('로그인이 필요하거나 세션이 만료되었습니다. 로그인 페이지로 이동합니다.');
     }
 
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
       const textResponse = await response.text();
-      console.error('Non-JSON API Response:', textResponse);
       throw new Error(`서버에서 예상치 못한 응답을 받았습니다 (Content-Type: ${contentType}).`);
     }
 

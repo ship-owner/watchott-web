@@ -1,8 +1,18 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./Header.css";
 
+import { apiClient } from "@/utils/apiClient";
+
 const Header = () => {
+  const navigate = useNavigate();
   const isAuthenticated = localStorage.getItem('accessToken');
+
+  const handleLogout = async () => {
+          await apiClient.post('/api/user/logout');
+          localStorage.removeItem('accessToken');
+          alert('로그아웃이 완료되었습니다.');
+          navigate('/');
+  };
 
   return (
     <header className="bg-dark">
@@ -48,11 +58,18 @@ const Header = () => {
                   <Link className="nav-link" to="/login">Login</Link>
                 </li>
               ) : (
+                <>
                 <li className="nav-item">
                   <a className="nav-link" href="#" onClick={() => {/* logout 함수 */}}>
                     사용자명
                   </a>
                 </li>
+                 <li className="nav-item">
+                      <button className="nav-link btn btn-link" onClick={handleLogout} style={{ color: 'white', textDecoration: 'none' }}>
+                          로그아웃
+                      </button>
+                  </li>
+                </>
               )}
             </ul>
           </div>
