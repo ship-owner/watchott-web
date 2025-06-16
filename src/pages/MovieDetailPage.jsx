@@ -5,6 +5,8 @@ import MovieActor from '../components/movie/movieDetail/MovieActor';
 import MovieComment from '../components/movie/movieDetail/MovieComment';
 import MovieStreaming from '../components/movie/movieDetail/MovieStreaming';
 
+import { apiClient } from '@/utils/apiClient';
+
 const MovieDetailPage = () => {
     const { id } = useParams(); // 영화 ID
     const [movie, setMovie] = useState(null);
@@ -17,38 +19,9 @@ const MovieDetailPage = () => {
             setError(null);
 
             try {
-                const accessToken = localStorage.getItem('accessToken');
-
-                console.log(accessToken);
-
-                // 2. 액세스 토큰이 없는 경우 처리
-                if (!accessToken) {
-                    console.error('액세스 토큰이 없습니다. 로그인해주세요.');
-                    setError('로그인이 필요합니다.');
-                    // navigate('/login'); // 로그인 페이지로 리다이렉트 (React Router 사용 시)
-                    return; // 토큰이 없으므로 API 호출을 중단
-                }
-
-                const response = await fetch(`/api/movie/detail2/${id}`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${accessToken}`
-                    }
-                });
-
-
-                if (!response.ok) {
-                    // 401/403 에러 처리 추가
-                    if (response.status === 401 || response.status === 403) {
-                        throw new Error("영화 상세 정보를 조회할 권한이 없거나 로그인 세션이 만료되었습니다.");
-                    }
-                    throw new Error(`영화 상세 정보를 불러오는 중 오류 발생: ${response.status} ${response.statusText}`);
-                }
-                const data = await response.json();
-                setMovie(data);
+                const response = await apiClient.get(`/api/movie/detail/${id}`);
+                setMovie(response.data);
             } catch (err) {
-                console.error("영화 상세 정보를 불러오는 중 오류 발생:", err);
                 setError(err.message);
                 setMovie(null);
             } finally {
@@ -80,8 +53,7 @@ const MovieDetailPage = () => {
         return (
             <section className="py-5 bg-dark text-white" style={{ minHeight: 'calc(100vh - 100px)' }}>
                 <div className="container px-5 my-5">
-                    <p className="text-danger">영화 상세 정보를 불러오지 못했습니다: {error}</p>
-                    <p>잠시 후 다시 시도해 주세요.</p>
+                    <p className="text-danger">{error}</p>
                 </div>
             </section>
         );
