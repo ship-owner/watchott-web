@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import MovieCard from './MovieCard';
 import './MovieLatest.css';
-import { apiClient } from '@/utils/apiClient';
+import apiClient from '@/utils/apiClient';
 
 const MovieLatest = () => {
     const [movies, setMovies] = useState([]);
@@ -9,7 +9,7 @@ const MovieLatest = () => {
 
     const fetchLatestMovieData = async () => {
         try {
-            const response = await apiClient.get('/api/movie/latest'); 
+            const response = await apiClient.get('/movie/latest'); 
             setMovies(response.data);
             setSelectedMovieIndex(Math.min(2, response.data.length > 0 ? Math.floor((response.data.length - 1) / 2) : 0));
         } catch (error) {

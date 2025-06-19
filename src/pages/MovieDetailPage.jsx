@@ -5,7 +5,7 @@ import MovieActor from '../components/movie/movieDetail/MovieActor';
 import MovieComment from '../components/movie/movieDetail/MovieComment';
 import MovieStreaming from '../components/movie/movieDetail/MovieStreaming';
 
-import { apiClient } from '@/utils/apiClient';
+import apiClient from '@/utils/apiClient';
 
 const MovieDetailPage = () => {
     const { id } = useParams(); // 영화 ID
@@ -19,7 +19,7 @@ const MovieDetailPage = () => {
             setError(null);
 
             try {
-                const response = await apiClient.get(`/api/movie/detail/${id}`);
+                const response = await apiClient.get(`/movie/detail/${id}`);
                 setMovie(response.data);
             } catch (err) {
                 setError(err.message);

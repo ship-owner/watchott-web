@@ -1,87 +1,84 @@
+import axios from 'axios';
+
+let router ;
+
+export function setRouter(fn) {
+  router  = fn;
+}
+
+const apiClient = axios.create({
+  baseURL: '/api',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
 const PUBLIC_API_PATHS = [
-  '/api/user/login',
-  '/api/user/signup',
-  '/api/movie/trend',
-  '/api/movie/latest',
+  '/user/login',
+  '/user/signup',
+  '/movie/trend',
+  '/movie/latest',
 ];
 
 const isPublicApi = (url) => {
   return PUBLIC_API_PATHS.some(publicPath => url.startsWith(publicPath));
 };
 
-async function request(url, method = 'GET', body = null) {
-  const options = {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: body ? JSON.stringify(body) : null
-  };
-
-
-  const token = localStorage.getItem('accessToken');
-
-  if (!isPublicApi(url)) {
-
+//토큰 검증
+apiClient.interceptors.request.use((config) => {
+  if (!isPublicApi(config.url)) {
+    const token = localStorage.getItem('accessToken');
     if (!token) {
-        setTimeout(() => {
-            window.location.href = '/login';
-        }, 1500);
-        throw new Error('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
-    } else {
-      options.headers['Authorization'] = `Bearer ${token}`;
+      setTimeout(() => {
+        router('/login');
+      }, 1500);
+      return Promise.reject(new Error('로그인이 필요합니다. 로그인 페이지로 이동합니다.'));
     }
+    config.headers['Authorization'] = `Bearer ${token}`;
+  }
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+});
+
+//응답 검증 및 신규 발행 토큰 추가
+apiClient.interceptors.response.use((response) => {
+  const newToken = response.headers['new-authorization'];
+  if (newToken && newToken.startsWith('Bearer ')) {
+    localStorage.setItem('accessToken', newToken.slice(7));
   }
 
-  try {
-    const response = await fetch(url, options);
+  const contentType = response.headers['content-type'];
+  if (!contentType || !contentType.includes('application/json')) {
+    return Promise.reject(new Error(`서버에서 예상치 못한 응답을 받았습니다 (Content-Type: ${contentType}).`));
+  }
 
-    const newAccessToken = response.headers.get('New-Authorization');
-    if (newAccessToken && newAccessToken.startsWith("Bearer ")) {
-      localStorage.setItem('accessToken', newAccessToken.substring(7));
-    }
+  const data = response.data;
 
+  if (data.status === 'SUCCESS') {
+    return data;
+  }
+
+  return Promise.reject(new Error(data.message || '예상치 못한 API 오류가 발생했습니다.'));
+}, (error) => {
+  const response = error.response;
+
+  if (response) {
     if (response.status === 401) {
-        localStorage.removeItem('accessToken'); 
-        setTimeout(() => {
-            window.location.href = '/login';
-        }, 1500);
-        throw new Error('로그인이 필요하거나 세션이 만료되었습니다. 로그인 페이지로 이동합니다.');
+      localStorage.removeItem('accessToken');
+      setTimeout(() => {
+        router('/login');
+      }, 1500);
+      return Promise.reject(new Error('로그인이 필요하거나 세션이 만료되었습니다. 로그인 페이지로 이동합니다.'));
     }
 
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      const textResponse = await response.text();
-      throw new Error(`서버에서 예상치 못한 응답을 받았습니다 (Content-Type: ${contentType}).`);
+    if (response.data && (response.data.status === 'FAIL' || response.data.status === 'ERROR')) {
+      return Promise.reject(new Error(response.data.message || 'API 요청 실패.'));
     }
-
-    const apiResponse = await response.json();
-
-    if (response.ok) {
-      if (apiResponse.status === 'SUCCESS') {
-        return apiResponse;
-      } else {
-        console.warn('API Response status is not success despite HTTP OK:', apiResponse);
-        throw new Error(apiResponse.message || 'API 처리 중 알 수 없는 문제가 발생했습니다.');
-      }
-    } else {
-      if (apiResponse.status === 'FAIL' || apiResponse.status === 'ERROR') {
-        console.error('API Error:', apiResponse.message, apiResponse.data);
-        throw new Error(apiResponse.message || 'API 요청 실패.');
-      } else {
-        console.error('Unexpected API Error Response:', apiResponse);
-        throw new Error('예상치 못한 API 오류가 발생했습니다.');
-      }
-    }
-  } catch (error) {
-    console.error('API 오류 발생:', error);
-    throw error.message; 
   }
-}
 
-export const apiClient = {
-  get: (url) => request(url, 'GET'),
-  post: (url, body) => request(url, 'POST', body),
-  put: (url, body) => request(url, 'PUT', body),
-  del: (url) => request(url, 'DELETE'),
-};
+  return Promise.reject(new Error('예상치 못한 API 오류가 발생했습니다.'));
+});
+
+
+export default apiClient;

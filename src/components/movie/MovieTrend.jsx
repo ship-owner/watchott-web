@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import { apiClient } from '@/utils/apiClient';
+import apiClient from '@/utils/apiClient';
 
 const MovieTrend = () => {
     const [movies, setMovies] = useState([]);
 
     const fetchTrendMovieData = async () => {
         try {
-            const response = await apiClient.get('/api/movie/trend');
+            const response = await apiClient.get('/movie/trend');
             setMovies(response.data);
         } catch (error) {
             console.error("트렌드 영화 데이터를 가져오는 중 오류 발생:", error);
