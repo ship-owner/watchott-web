@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { apiClient } from '@/utils/apiClient';
+import apiClient from '@/utils/apiClient';
 
-const SignUpForm = ({ onSignUpSuccess, onError }) => {
+const SignUpForm = ({ onSignUpSuccess }) => {
     const [userId, setUserId] = useState(''); 
     const [email, setEmail] = useState('');
     const [name, setName] = useState('');
@@ -36,24 +36,24 @@ const SignUpForm = ({ onSignUpSuccess, onError }) => {
         e.preventDefault();
 
         if (!userId || !email || !name || !password || !confirmPassword) {
-            onError("모든 필수 정보를 입력해주세요.");
+            alert("모든 필수 정보를 입력해주세요.");
             return;
         }
 
         if (!isEmailValid) {
-            onError("이메일 형식이 올바르지 않습니다.");
+            alert("이메일 형식이 올바르지 않습니다.");
             return;
         }
 
         if (password !== confirmPassword) {
-            onError("비밀번호가 일치하지 않습니다.");
+            alert("비밀번호가 일치하지 않습니다.");
             setPassword('');
             setConfirmPassword(''); 
             return;
         }
 
         try {
-            const response = await apiClient.post('/api/user/signup',{
+            const response = await apiClient.post('/user/signup',{
                 userId: userId,
                 email: email,
                 name: name,
@@ -72,7 +72,7 @@ const SignUpForm = ({ onSignUpSuccess, onError }) => {
            
         } catch (error) {
             console.error("회원가입 요청 중 오류 발생:", error);
-            onError("회원가입 요청 중 오류가 발생했습니다.");
+            alert("회원가입 요청 중 오류가 발생했습니다.");
         }
     };
 

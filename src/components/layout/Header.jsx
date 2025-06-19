@@ -1,17 +1,18 @@
 import { Link, useNavigate } from "react-router-dom";
 import "./Header.css";
 
-import { apiClient } from "@/utils/apiClient";
+import { useAuth } from '@/components/common/provider/AuthProvider';
 
 const Header = () => {
-  const navigate = useNavigate();
-  const isAuthenticated = localStorage.getItem('accessToken');
+  const { isAuthenticated, logout } = useAuth();
 
   const handleLogout = async () => {
-          await apiClient.post('/api/user/logout');
-          localStorage.removeItem('accessToken');
-          alert('로그아웃이 완료되었습니다.');
-          navigate('/');
+    try {
+      await logout();
+      alert('로그아웃이 완료되었습니다.');
+    } catch (error) {
+      alert('로그아웃 중 오류가 발생했습니다.');
+    }
   };
 
   return (

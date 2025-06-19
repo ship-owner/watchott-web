@@ -1,29 +1,19 @@
 import React, { useState } from 'react';
-import { apiClient } from '@/utils/apiClient';
+import { useAuth } from '@/components/common/provider/AuthProvider';
 
-const LoginForm = ({ onLoginSuccess, onError }) => {
+
+const LoginForm = () => {
     const [userId, setuserId] = useState('');
     const [password, setPassword] = useState('');
+    const { login } = useAuth();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
         try {
-
-            const response = await apiClient.post('/api/user/login',{
-                userId: userId,
-                password: password, 
-            }); 
-
-            const data = await response.data;
-            if (data && data.accessToken) {
-                localStorage.setItem('accessToken', data.accessToken);
-                onLoginSuccess();
-            } else {
-                onError("로그인 성공했지만, 토큰이 없습니다.");
-            }
-           
+            await login(userId, password);
         } catch (error) {
-            onError(error);
+            alert(error);
             setPassword('');
         }
     };
